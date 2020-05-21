@@ -1,29 +1,29 @@
 # Konfiguracja Transmission na Raspberry Pi
 
-1. Aktualizacja listy pakietów.
+1. Na początku aktualizujemy listy pakietów.
 ```
 sudo apt update
 sudo apt upgrade
 ```
 
-2.  Instalacja demona torrentów transmission na Raspberry Pi.
+2.  Instalujemy demona torrentów transmission na Raspberry Pi.
 ```
 sudo apt install transmission-daemon
 ```
 
-# Instalacja Samba servera
+# Instalacja serwera  Samba
 
 1. Instalujemy pakiety wymagane do skonfigurowania Samby, uruchamiając następujące polecenie.
 ```
 sudo apt-get install samba samba-common-bin
 ```
  
-2. Zamin skonfigurujemy Samba server na naszym Pi, musimy najpierw utworzyć folder, który będziemy udostępniać.
+2. Tworzymy folder, który będziemy udostępniać.
 ```
-mkdir /home/pi/shared
+mkdir /home/pi/media/shared
 ```
 
-3. Teraz możemy udostępnić ten folder. Aby to zrobić, musimy zmodyfikować plik konfiguracyjny samby.
+3. Teraz możemy udostępnić ten folder. Aby to zrobić, musimy zmodyfikować plik konfiguracyjny serwera Samba.
 ```
 sudo nano /etc/samba/smb.conf
 ```
@@ -31,7 +31,7 @@ sudo nano /etc/samba/smb.conf
 4. W tym pliku dodajemy na dole następujące elementy.
 ```
 [shared]
-path = /home/pi/shared
+path = /home/pi/media/shared
 writeable=Yes
 create mask=0777
 directory mask=0777
@@ -39,12 +39,12 @@ public=no
 ```
 Po zakończeniu musimy zapisać i wyjść, naciskając Ctrl + X, a następnie Y i ENTER.
 
-5. Następnie musimy skonfigurować użytkownika dla naszego udziału Samba na Raspberry Pi. Bez tego nie będziemy mogli nawiązać połączenia ze współdzielonym dyskiem sieciowym.
+5. Konfigurujemy użytkownika dla naszego udziału Samba na Raspberry Pi. Bez tego nie będziemy mogli nawiązać połączenia ze współdzielonym dyskiem sieciowym.
 ```
 sudo smbpasswd -a pi
 ```
 
-6. Zanim połączymy się z naszym udziałem Raspberry Pi Samba, musimy ponownie uruchomić usługę samba, aby załadowała się ona w naszych zmianach konfiguracji.
+6. Restartujemy usługę samba, aby zaktualizować zmiany w konfiguracji.
 ```
 sudo systemctl restart smbd
 ```
@@ -61,28 +61,28 @@ hostname -I
 sudo systemctl stop transmission-daemon
 ```
 
-2. Następnie przejdziemy do utworzenia dwóch różnych folderów. Pierwszy to miejsce, w którym będziemy przechowywać torrenty w toku, a drugi to miejsce, w którym będziemy przechowywać pełne torrenty.
+2. Tworzymy dwa rózne foldery. Pierwszy to miejsce, w którym będziemy przechowywać pliki w trakcie pobierania, a drugi to miejsce, w którym będziemy przechowywać pobrane pliki.
 
-Foldery będą nazywane „torrent-inprogress” i „torrent-complete”.
+Foldery nazywamy "torrent-inprogress" i "torrent-complete".
 
-Tworzymy dwa foldery na dysku, który zamontowaliśmy w "/media/shared/". Ten folder znajduje się na zewnętrznym dysku twardym i jest dostępny za pośrednictwem SAMBA servera
+Tworzymy dwa foldery w katalogu który udostępniliśmy w "/media/shared/". Ten folder jest dostępny za pośrednictwem SAMBA servera
 ```
 sudo mkdir -p /media/shared/torrent-inprogress
 sudo mkdir -p /media/shared/torrent-complete
 ```
 
-3. Musimy dać użytkownikowi "pi" dostęp do utworzonych folderów. Zapewnienie dostępu użytkownika "pi" rozwiąże problemy z uprawnieniami.
+3. Nadajemy użytkownikowi "pi" uprawnienia do utworzonych folderów.
 ```
 sudo chown -R pi:pi /media/shared/torrent-inprogress
 sudo chown -R pi:pi /media/shared/torrent-complete
 ```
 
-4. Następnie musimy wprowadzić zmiany w pliku konfiguracyjnym.
+4. Wprowadzamy zmiany w pliku konfiguracyjnym.
 ```
 sudo nano /etc/transmission-daemon/settings.json
 ```
 
-5. W tym pliku musimy zmodyfikować następujące opcje konfiguracji.
+5. Zmieniamy następujące opcje konfiguracji.
 ```
 "incomplete-dir": "/media/shared/torrent-inprogress",
 "download-dir": "/media/shared/torrent_complete",
@@ -94,7 +94,7 @@ sudo nano /etc/transmission-daemon/settings.json
 
 # Zmiana użytkownika demona transmission
 
-1. Musimy zmodyfikować skrypt startowy demona Transmission, aby używał użytkownika "pi" zamiast domyślnego użytkownika "debian-transmission".
+1. Modyfikujemy skrypt startowy demona Transmission, aby używał użytkownika "pi" zamiast domyślnego użytkownika "debian-transmission".
 ```
 sudo nano /etc/init.d/transmission-daemon
 ```
@@ -116,7 +116,7 @@ user=pi
 ```
 Po zakończeniu musimy zapisać i wyjść, naciskając Ctrl + X, a następnie Y i ENTER.
 
-4. Teraz należy wykonać polecenie aby menedżero usług ponownie załadował wszystkie pliki konfiguracji usługi, W przeciwnym razie systemctl spróbuje użyć starszej wersji pliku usługi.
+4. Teraz należy wykonać polecenie aby menedżer usług ponownie załadował wszystkie pliki konfiguracji usługi, W przeciwnym razie systemctl spróbuje użyć starszej wersji pliku usługi.
 ```
 sudo systemctl daemon-reload
 ```
@@ -127,14 +127,14 @@ sudo systemctl daemon-reload
 sudo chown -R pi:pi /etc/transmission-daemon
 ```
 
-6. Następnie musimy utworzyć katalog, w którym demon uzyska dostęp do pliku "setting.json".
+6. Tworzymy katalog, w którym demon uzyska dostęp do pliku "setting.json".
 ```
 sudo mkdir -p /home/pi/.config/transmission-daemon/
 sudo ln -s /etc/transmission-daemon/settings.json /home/pi/.config/transmission-daemon/
 sudo chown -R pi:pi /home/pi/.config/transmission-daemon/
 ```
 
-7. Na koniec należy zrestartować usługę Transmission na naszym Raspberry Pi.
+7. Na koniec restartujemy usługę Transmission na naszym Raspberry Pi.
 ```
 sudo systemctl start transmission-daemon
 ```
